@@ -54,13 +54,13 @@ print( round( run_time, 4 ), 'seconds for running' )
 
 The mapping class has a cliques_to_mappings() function to convert from a list of cliques to a list of mappings.
 
-This function needs two arguments (nodes, edges) of modular product generated from the modular_product() function.
+This function needs two arguments nodes of modular product and obtained all cliques.
 
 Resulted maps1 includes many equivalent mappings.
 
-non_equivealnt() function can remove all equivalent mappings from inputting a list of mappings.
+non_equivealnt() function can remove all equivalent mappings from inputting a list of mappings (maps2).
 
-In addition, the filtering() function can apply mappings for two filters (second argument, 'filter1' and 'filter2').
+In addition, the filtering() function can apply mappings for two filters (second argument, 'filter1' and 'filter2') and output filtered list of mapping (maps3).
 
 To export each mapping, You can use export_mapping() function.
 
