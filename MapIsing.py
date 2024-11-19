@@ -587,10 +587,15 @@ class Mapping:
         
         return None
 
-    def cliques_to_mappings( self, nodes, cliques ):
+    def cliques_to_mappings( self, nodes, cliques, mode='bond' ):
         
-        btb_maps = [[ nodes[x] for x in cq ] for cq in cliques ]
-        maps = [ self.to_atom_mapping( x ) for x in btb_maps ]
+        if mode == 'atom':
+            maps = [[ nodes[x] for x in cq ] for cq in cliques ]
+        
+        if mode == 'bond':
+            btb_maps = [[ nodes[x] for x in cq ] for cq in cliques ]
+            maps = [ self.to_atom_mapping( x ) for x in btb_maps ]
+        
         comp_maps = self.permutation_complete( maps )
 
         for x in comp_maps:
