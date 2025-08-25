@@ -3,7 +3,7 @@ from functools import lru_cache
 import inspect
 from itertools import chain
 from operator import itemgetter
-from typing import Any, Optional
+from typing import List, Dict, Any, Optional
 
 import sympy
 
@@ -14,7 +14,7 @@ from . import functions
 
 def create_args_filtering_wrapper(
         func: Callable,
-        default_values: Optional[dict[str, Any]] = None
+        default_values: Optional[Dict[str, Any]] = None
 ) -> Callable:
     """Return a wrapper function that calls `func` with filtered arguments.
 
@@ -82,8 +82,8 @@ def create_args_filtering_wrapper(
 
 def lambdify(
         expr: sympy.Expr,
-        vars: Optional[list[Variable]] = None,
-        params: Optional[list[Parameter]] = None,
+        vars: Optional[List[Variable]] = None,
+        params: Optional[List[Parameter]] = None,
         func_name: Optional[str] = None
 ) -> Callable:
     """Convert a SymPy expression of variables and parameters into a function.
@@ -168,7 +168,7 @@ _numpy_printer = sympy.printing.numpy.NumPyPrinter(
 
 
 @lru_cache
-def _namespace() -> dict[str, Any]:
+def _namespace() -> Dict[str, Any]:
     """Return the namespace dictionary the `exec` command in `lambdify` uses.
 
     """
