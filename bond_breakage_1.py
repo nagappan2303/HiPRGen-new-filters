@@ -59,39 +59,44 @@ if maps3:
 # Bond extraction helper
 # --------------------------
 def get_bonds(smiles, offset=0):
-    """Return set of bonds as (i,j) pairs with i<j, shifted by offset."""
+    """
+    Return set of bonds as (i,j) pairs with i<j, shifted by offset.
+    Includes atom symbols for easier filtering of O-Na bonds.
+    """
     mol = Chem.MolFromSmiles(smiles)
     bonds = set()
+    atom_symbols = {i + 1 + offset: atom.GetSymbol() for i, atom in enumerate(mol.GetAtoms())}
     for bond in mol.GetBonds():
         i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-        # shift indices by offset, also shift to 1-based
         i = i + 1 + offset
         j = j + 1 + offset
-        bonds.add(tuple(sorted((i, j))))  # ensure (i,j) == (j,i)
-    return bonds, mol.GetNumAtoms()
+        bonds.add((min(i, j), max(i, j)))
+    return bonds, atom_symbols, mol.GetNumAtoms()
 
 # --------------------------
 # Bond change analysis
 # --------------------------
 if maps3:
-    #print(maps3)
-    best_mapping = dict(maps3[0])  # take first mapping, ensure dict
-    #print(best_mapping)
+    best_mapping = dict(maps3[0])  # take first mapping
     reactant_bonds = set()
     product_bonds = set()
+    atom_symbols_react = {}
+    atom_symbols_prod = {}
 
     # continuous numbering across all reactants
     offset = 0
     for r in reactants:
-        bonds, n_atoms = get_bonds(r, offset)
+        bonds, symbols, n_atoms = get_bonds(r, offset)
         reactant_bonds |= bonds
+        atom_symbols_react.update(symbols)
         offset += n_atoms
 
     # continuous numbering across all products
     offset = 0
     for p in products:
-        bonds, n_atoms = get_bonds(p, offset)
+        bonds, symbols, n_atoms = get_bonds(p, offset)
         product_bonds |= bonds
+        atom_symbols_prod.update(symbols)
         offset += n_atoms
 
     print("\nOriginal Reactant bonds:", reactant_bonds)
@@ -104,7 +109,17 @@ if maps3:
         ri = next((r for r, pr in best_mapping.items() if pr == i), None)
         rj = next((r for r, pr in best_mapping.items() if pr == j), None)
         if ri is not None and rj is not None:
-            mapped_product_bonds.add(tuple(sorted((ri, rj))))
+            mapped_product_bonds.add((min(ri, rj), max(ri, rj)))
+
+    # ---- Ignore O-Na coordinate bonds ----
+    def is_coordinate_bond(i, j, atom_symbols):
+        return (
+            (atom_symbols.get(i) == 'O' and atom_symbols.get(j) == 'Na') or
+            (atom_symbols.get(i) == 'Na' and atom_symbols.get(j) == 'O')
+        )
+
+    reactant_bonds = {b for b in reactant_bonds if not is_coordinate_bond(b[0], b[1], atom_symbols_react)}
+    mapped_product_bonds = {b for b in mapped_product_bonds if not is_coordinate_bond(b[0], b[1], atom_symbols_react)}
 
     # find broken and formed bonds
     broken = reactant_bonds - mapped_product_bonds
@@ -114,4 +129,14 @@ if maps3:
     print("\nBond Changes:")
     print("  Broken bonds:", len(broken), broken)
     print("  Formed bonds:", len(formed), formed)
+
+    # ---- Check for common reaction center for break-1-form-1 ----
+    common_center = False
+    if len(broken) == 1 and len(formed) == 1:
+        b_atoms = list(broken)[0]
+        f_atoms = list(formed)[0]
+        if set(b_atoms) & set(f_atoms):
+            common_center = True
+
+    print("\nReaction Center Check (break-1-form-1):", common_center)
     print("-------------------------------------------------------------")
